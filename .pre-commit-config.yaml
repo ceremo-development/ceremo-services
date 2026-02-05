@@ -1,0 +1,55 @@
+# Pre-commit configuration for code quality and security
+repos:
+  # Black - Code formatting
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3.13
+
+  # Flake8 - Style guide enforcement and linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+
+  # Bandit - Security linting
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        exclude: ^tests/
+
+  # MyPy - Static type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.16.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [
+          "types-requests",
+          "types-PyMySQL",
+          "pydantic",
+          "types-flask",
+          "types-flask-cors",
+          "sqlalchemy[mypy]",
+          "flask-sqlalchemy",
+          "types-flask-migrate",
+          "marshmallow"
+        ]
+        exclude: ^tests/|health_check\.py$|^migrations/
+
+  # Built-in hooks for basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        exclude: ^helm/
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: debug-statements
+
+# Configuration
+default_stages: [pre-commit]
+fail_fast: false
