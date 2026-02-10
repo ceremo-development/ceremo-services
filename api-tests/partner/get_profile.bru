@@ -1,0 +1,15 @@
+meta {
+  name: get_profile
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{apiUrl}}/api/partner/profile
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -13,6 +13,10 @@ class RentalPartnerRepository:
         """Find rental partner by email."""
         return db.session.query(RentalPartner).filter_by(email=email).first()
 
+    def find_by_id(self, partner_id: str) -> Optional[RentalPartner]:
+        """Find rental partner by ID."""
+        return db.session.query(RentalPartner).filter_by(id=partner_id).first()
+
     def create(
         self,
         email: str,

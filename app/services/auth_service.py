@@ -1,8 +1,22 @@
 """Authentication service."""
 
+from datetime import datetime
+import jwt
 from app.repositories.rental_partner_repository import RentalPartnerRepository
-from app.contracts.auth_contracts import AuthResponse, AuthData, UserData
-from app.utils.security import hash_password, verify_password, generate_token
+from app.repositories.blacklisted_token_repository import BlacklistedTokenRepository
+from app.repositories.partner_profile_repository import PartnerProfileRepository
+from app.contracts.auth_contracts import (
+    AuthResponse,
+    AuthData,
+    UserData,
+    SignOutResponse,
+)
+from app.utils.security import (
+    hash_password,
+    verify_password,
+    generate_token,
+    decode_token,
+)
 from app.utils.errors import ValidationError, UnauthorizedError, ConflictError
 from app.models.rental_partner import RentalPartner
 
@@ -13,6 +27,8 @@ class AuthService:
     def __init__(
         self,
         repository: RentalPartnerRepository,
+        blacklist_repo: BlacklistedTokenRepository,
+        profile_repo: PartnerProfileRepository,
         jwt_secret: str,
         jwt_expiration: int,
         refresh_expiration: int,
@@ -20,6 +36,8 @@ class AuthService:
         remember_me_multiplier: int,
     ):
         self.repository = repository
+        self.blacklist_repo = blacklist_repo
+        self.profile_repo = profile_repo
         self.jwt_secret = jwt_secret
         self.jwt_expiration = jwt_expiration
         self.refresh_expiration = refresh_expiration
@@ -61,6 +79,25 @@ class AuthService:
             phone=phone,
         )
 
+        # Create empty profile for new partner
+        self.profile_repo.create(
+            partner_id=partner.id,
+            business_name="",
+            owner_name=f"{first_name} {last_name}",
+            email=email,
+            phone=phone,
+            address="",
+            city="",
+            state="",
+            pincode="",
+            business_type="",
+            years_in_business="",
+            description="",
+            categories=[],
+            service_areas=[],
+            delivery_radius="",
+        )
+
         return self._create_auth_response(
             partner, "Registration successful", self.jwt_expiration
         )
@@ -80,6 +117,18 @@ class AuthService:
             else self.jwt_expiration
         )
         return self._create_auth_response(partner, "Sign in successful", expiration)
+
+    def sign_out(self, token: str) -> SignOutResponse:
+        """Sign out rental partner by blacklisting token."""
+        try:
+            payload = decode_token(token, self.jwt_secret)
+            expires_at = datetime.fromtimestamp(payload["exp"])
+            self.blacklist_repo.blacklist(token, expires_at)
+            return SignOutResponse(message="Sign out successful")
+        except jwt.ExpiredSignatureError:
+            raise UnauthorizedError("Token has expired")
+        except jwt.InvalidTokenError:
+            raise UnauthorizedError("Invalid token")
 
     def _create_user_data(self, partner: RentalPartner) -> UserData:
         """Create UserData from RentalPartner."""

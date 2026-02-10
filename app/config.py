@@ -1,8 +1,23 @@
 import os
+import secrets
 from dataclasses import dataclass
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _get_or_generate_secret(env_var: str, min_length: int = 32) -> str:
+    """Get secret from env or generate secure random key."""
+    secret = os.getenv(env_var, "")
+    if not secret or len(secret) < min_length:
+        env = os.getenv("ENVIRONMENT", "development")
+        if env == "production":
+            raise ValueError(
+                f"{env_var} must be set in production environment. "
+                f"Generate a secure key with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        return secrets.token_urlsafe(min_length)
+    return secret
 
 
 @dataclass
@@ -15,9 +30,9 @@ class Config:
 
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key")
+    SECRET_KEY: str = _get_or_generate_secret("SECRET_KEY")
 
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "jwt-secret-key")
+    JWT_SECRET_KEY: str = _get_or_generate_secret("JWT_SECRET_KEY")
     JWT_EXPIRATION_HOURS: int = int(os.getenv("JWT_EXPIRATION_HOURS", "24"))
     REFRESH_TOKEN_EXPIRATION_HOURS: int = int(
         os.getenv("REFRESH_TOKEN_EXPIRATION_HOURS", "720")
@@ -25,6 +40,10 @@ class Config:
 
     MIN_PASSWORD_LENGTH: int = int(os.getenv("MIN_PASSWORD_LENGTH", "8"))
     REMEMBER_ME_MULTIPLIER: int = int(os.getenv("REMEMBER_ME_MULTIPLIER", "24"))
+
+    GEOCODING_COUNTRY: str = os.getenv("GEOCODING_COUNTRY", "India")
+    GEOCODING_COUNTRY_CODE: str = os.getenv("GEOCODING_COUNTRY_CODE", "in")
+    GEOCODING_RESULT_LIMIT: int = int(os.getenv("GEOCODING_RESULT_LIMIT", "10"))
 
     @property
     def DATABASE_URL(self) -> str:

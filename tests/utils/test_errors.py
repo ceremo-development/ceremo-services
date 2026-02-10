@@ -8,7 +8,9 @@ from app.utils.errors import (
     UnauthorizedError,
     ForbiddenError,
     register_error_handlers,
+    handle_controller_errors,
 )
+from sqlalchemy.exc import IntegrityError, DataError
 
 
 @pytest.fixture
@@ -97,3 +99,79 @@ def test_500_handler(error_app):
     assert response.status_code == 500
     data = response.get_json()
     assert "error" in data
+
+
+def test_handle_controller_errors_integrity_duplicate():
+    from flask import Flask
+
+    app = Flask(__name__)
+
+    with app.app_context():
+
+        @handle_controller_errors
+        def test_func():
+            raise IntegrityError("statement", "params", "Duplicate entry")
+
+        with pytest.raises(ConflictError):
+            test_func()
+
+
+def test_handle_controller_errors_integrity_foreign_key():
+    from flask import Flask
+
+    app = Flask(__name__)
+
+    with app.app_context():
+
+        @handle_controller_errors
+        def test_func():
+            raise IntegrityError("statement", "params", "FOREIGN KEY constraint failed")
+
+        with pytest.raises(ValidationError):
+            test_func()
+
+
+def test_handle_controller_errors_integrity_other():
+    from flask import Flask
+
+    app = Flask(__name__)
+
+    with app.app_context():
+
+        @handle_controller_errors
+        def test_func():
+            raise IntegrityError("statement", "params", "other error")
+
+        with pytest.raises(AppError):
+            test_func()
+
+
+def test_handle_controller_errors_data_error():
+    from flask import Flask
+
+    app = Flask(__name__)
+
+    with app.app_context():
+
+        @handle_controller_errors
+        def test_func():
+            raise DataError("statement", "params", "orig")
+
+        with pytest.raises(ValidationError):
+            test_func()
+
+
+def test_handle_controller_errors_sqlalchemy_error():
+    from flask import Flask
+    from sqlalchemy.exc import SQLAlchemyError
+
+    app = Flask(__name__)
+
+    with app.app_context():
+
+        @handle_controller_errors
+        def test_func():
+            raise SQLAlchemyError("Database error")
+
+        with pytest.raises(AppError):
+            test_func()

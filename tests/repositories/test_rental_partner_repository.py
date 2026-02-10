@@ -61,3 +61,24 @@ def test_find_by_email_not_exists(repository, mocker):
 
     partner = repository.find_by_email("nonexistent@example.com")
     assert partner is None
+
+
+def test_find_by_id_exists(repository, mock_partner, mocker):
+    mock_query = mocker.patch(
+        "app.repositories.rental_partner_repository.db.session.query"
+    )
+    mock_query.return_value.filter_by.return_value.first.return_value = mock_partner
+
+    partner = repository.find_by_id("test-id")
+    assert partner is not None
+    assert partner.id == "test-id"
+
+
+def test_find_by_id_not_exists(repository, mocker):
+    mock_query = mocker.patch(
+        "app.repositories.rental_partner_repository.db.session.query"
+    )
+    mock_query.return_value.filter_by.return_value.first.return_value = None
+
+    partner = repository.find_by_id("nonexistent-id")
+    assert partner is None

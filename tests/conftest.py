@@ -13,12 +13,15 @@ def test_config():
         DATABASE_NAME="test_db",
         ENVIRONMENT="test",
         DEBUG=True,
-        SECRET_KEY="test-secret",
-        JWT_SECRET_KEY="test-jwt-secret",
+        SECRET_KEY="test-secret-key-at-least-32-chars-long",
+        JWT_SECRET_KEY="test-jwt-secret-key-at-least-32-chars",
         JWT_EXPIRATION_HOURS=24,
         REFRESH_TOKEN_EXPIRATION_HOURS=720,
         MIN_PASSWORD_LENGTH=8,
         REMEMBER_ME_MULTIPLIER=24,
+        GEOCODING_COUNTRY="India",
+        GEOCODING_COUNTRY_CODE="in",
+        GEOCODING_RESULT_LIMIT=10,
     )
 
 

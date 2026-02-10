@@ -4,7 +4,7 @@ from typing import Any, Tuple
 from flask import Blueprint, jsonify, g
 from app.services.auth_service import AuthService
 from app.contracts.auth_contracts import SignInRequest, SignUpRequest
-from app.utils.validators import validate_json
+from app.utils.validators import validate_json, has_permission
 from app.utils.errors import handle_controller_errors
 from app.utils.logging import setup_logger
 
@@ -52,5 +52,21 @@ def create_auth_routes(auth_service: AuthService) -> Blueprint:
 
         logger.info("Sign up successful")
         return jsonify(response.model_dump()), 201
+
+    @auth_bp.route("/partner/signout", methods=["POST"])
+    @has_permission()
+    @handle_controller_errors
+    def sign_out() -> Tuple[Any, int]:
+        """Sign out rental partner."""
+        logger.info("Received sign out request")
+
+        if auth_service.blacklist_repo.is_blacklisted(g.token):
+            logger.warning("Attempted sign out with revoked token")
+            return jsonify({"success": False, "message": "Token already revoked"}), 401
+
+        response = auth_service.sign_out(g.token)
+
+        logger.info("Sign out successful")
+        return jsonify(response.model_dump()), 200
 
     return auth_bp
