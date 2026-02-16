@@ -1,17 +1,43 @@
-name: Deploy to Render
+name: Ceremo Service Deployment
 
 on:
   push:
     branches: [ main ]
 
+env:
+  IMAGE_NAME: devyaseen/ceremo
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Trigger Render deployment
+    - name: Extract version
+      id: version
       run: |
-        curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+        VER=$(grep '^build.version=' version.properties | cut -d= -f2)
+        echo "VERSION=$VER" >> $GITHUB_ENV
+        echo "VERSION=$VER" >> $GITHUB_OUTPUT
+
+    - name: Login to Docker Hub
+      run: |
+        echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
+        -u "${{ secrets.DOCKERHUB_USERNAME }}" \
+        --password-stdin
+
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }} .
+        docker tag ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }} ${{ env.IMAGE_NAME }}:latest
+
+    - name: Push Docker image
+      run: |
+        docker push ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+        docker push ${{ env.IMAGE_NAME }}:latest
+
+    - name: Trigger Render Deploy
+      run: |
+        curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
