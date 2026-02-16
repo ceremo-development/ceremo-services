@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ceremo-services
+    env: docker
+    plan: starter
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ceremo-db
+          property: connectionString
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 5000
+
+databases:
+  - name: ceremo-db
+    plan: starter
+    region: oregon
+    databaseName: ceremo
+    user: ceremo
