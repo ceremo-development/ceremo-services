@@ -1,0 +1,23 @@
+services:
+  - name: ceremo-services
+    type: web
+    instance_type: nano
+    regions:
+      - fra
+    ports:
+      - port: 8000
+        protocol: http
+    env:
+      - key: PORT
+        value: "8000"
+      - key: ENVIRONMENT
+        value: production
+    build:
+      type: docker
+      dockerfile: Dockerfile
+    health_checks:
+      - path: /health
+        port: 8000
+        protocol: http
+        initial_delay_seconds: 30
+        period_seconds: 10
