@@ -11,6 +11,7 @@ from app.services.auth_service import AuthService
 from app.services.partner_profile_service import PartnerProfileService
 from app.services.location_service import LocationService
 from app.services.nominatim_service import NominatimService
+from app.utils.storage import get_storage_service
 from app.routes.auth_routes import create_auth_routes
 from app.routes.partner_profile_routes import create_partner_profile_routes
 from app.routes.location_routes import create_location_routes
@@ -25,14 +26,21 @@ def create_app(config: Optional[Config] = None) -> Flask:
     if config is None:
         config = get_settings()
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = config.DATABASE_URL
+    app.config["SQLALCHEMY_DATABASE_URI"] = config.get_database_url()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["JWT_SECRET_KEY"] = config.JWT_SECRET_KEY
 
     db.init_app(app)
     Migrate(app, db)
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:8081"}})
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": ["http://localhost:8081", "http://192.168.1.83:8081"]
+            }
+        },
+    )
 
     register_error_handlers(app)
     setup_request_logging(app)
@@ -72,6 +80,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
     )
     location_bp = create_location_routes(location_service)
     app.register_blueprint(location_bp, url_prefix="/api/location")
+
+    # Initialize storage service
+    storage_service = get_storage_service(config)
+    app.config["STORAGE_SERVICE"] = storage_service
 
     @app.route("/")
     def index() -> Dict[str, Any]:

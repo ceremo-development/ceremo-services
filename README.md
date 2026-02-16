@@ -1,10 +1,10 @@
 # Ceremo Services
 
-A Python Flask application built with clean architecture principles, featuring MySQL database integration and comprehensive development tooling.
+A Python Flask application built with clean architecture principles, featuring PostgreSQL database integration and comprehensive development tooling.
 
 ## Features
 
-- **MySQL Database**: Vitess MySQL cluster for scalable data storage
+- **PostgreSQL Database**: Supabase PostgreSQL for scalable data storage
 - **Clean Architecture**: Repositories and services pattern for maintainable code
 - **Type Safety**: Type hints and Pydantic models for data validation
 - **Error Handling**: Comprehensive error handling throughout the application
@@ -37,7 +37,7 @@ ceremo-services/
 
 - Python 3.11+
 - Poetry
-- Docker and Docker Compose (for Vitess)
+- Supabase account and project
 
 ### Installation
 
@@ -60,35 +60,12 @@ ceremo-services/
 
 ## Running Locally
 
-### Option 1: Using Docker Compose (Recommended)
-
-Start the entire stack:
-```bash
-docker compose up -d
-```
-
-This will start:
-- Vitess MySQL cluster (port 33577)
-- Application server (port 5000)
-
-### Option 2: Local Development
-
-1. **Start Vitess database:**
-   ```bash
-   docker compose up -d vitess
-   ```
-
-2. **Wait for Vitess to be healthy:**
-   ```bash
-   docker compose ps
-   ```
-
-3. **Run database migrations:**
+1. **Run database migrations:**
    ```bash
    flask db upgrade
    ```
 
-4. **Start the application:**
+2. **Start the application:**
    ```bash
    flask run
    ```

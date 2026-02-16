@@ -22,11 +22,12 @@ def _get_or_generate_secret(env_var: str, min_length: int = 32) -> str:
 
 @dataclass
 class Config:
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     DATABASE_HOST: str = os.getenv("DATABASE_HOST", "localhost")
-    DATABASE_PORT: int = int(os.getenv("DATABASE_PORT", "3306"))
-    DATABASE_USER: str = os.getenv("DATABASE_USER", "root")
+    DATABASE_PORT: int = int(os.getenv("DATABASE_PORT", "5432"))
+    DATABASE_USER: str = os.getenv("DATABASE_USER", "postgres")
     DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD", "")
-    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "ceremo_db")
+    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "postgres")
 
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
@@ -45,10 +46,16 @@ class Config:
     GEOCODING_COUNTRY_CODE: str = os.getenv("GEOCODING_COUNTRY_CODE", "in")
     GEOCODING_RESULT_LIMIT: int = int(os.getenv("GEOCODING_RESULT_LIMIT", "10"))
 
-    @property
-    def DATABASE_URL(self) -> str:
-        """Construct database URL."""
-        return f"mysql+pymysql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+    R2_ACCESS_KEY: str = os.getenv("R2_ACCESS_KEY", "")
+    R2_SECRET_KEY: str = os.getenv("R2_SECRET_KEY", "")
+    R2_ENDPOINT: str = os.getenv("R2_ENDPOINT", "")
+    R2_BUCKET: str = os.getenv("R2_BUCKET", "")
+
+    def get_database_url(self) -> str:
+        """Get database URL from env or construct from components."""
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        return f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
 
 def get_settings() -> Config:

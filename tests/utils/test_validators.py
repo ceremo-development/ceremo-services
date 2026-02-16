@@ -75,6 +75,12 @@ def test_validate_json_empty_body(test_app):
     assert response.status_code == 400
 
 
+def test_validate_json_null_body(test_app):
+    client = test_app.test_client()
+    response = client.post("/test", data="null", content_type="application/json")
+    assert response.status_code == 400
+
+
 def test_validate_json_malformed_json(test_app):
     client = test_app.test_client()
     response = client.post(

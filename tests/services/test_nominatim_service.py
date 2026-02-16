@@ -102,3 +102,31 @@ def test_parse_result_with_village(nominatim_service):
 
     assert parsed["area"] == "Test Village"
     assert parsed["city"] == "Test Village"
+
+
+def test_parse_result_with_town(nominatim_service):
+    result = {
+        "address": {
+            "town": "Test Town",
+            "state": "Karnataka",
+        }
+    }
+
+    parsed = nominatim_service._parse_result(result)
+
+    assert parsed["area"] == "Test Town"
+    assert parsed["city"] == "Test Town"
+
+
+def test_parse_result_with_municipality(nominatim_service):
+    result = {
+        "address": {
+            "municipality": "Test Municipality",
+            "state": "Karnataka",
+        }
+    }
+
+    parsed = nominatim_service._parse_result(result)
+
+    assert parsed["area"] == "Test Municipality"
+    assert parsed["city"] == "Test Municipality"

@@ -95,3 +95,27 @@ def test_update(repository, mock_profile, mocker):
 
     assert profile.business_name == "Updated Business"
     mock_session.commit.assert_called_once()
+
+
+def test_update_not_found(repository, mocker):
+    mocker.patch("app.repositories.partner_profile_repository.db.session")
+    mocker.patch.object(repository, "get_by_partner_id", return_value=None)
+
+    with pytest.raises(ValueError, match="Profile not found for partner_id"):
+        repository.update(
+            partner_id="nonexistent-id",
+            business_name="Updated Business",
+            owner_name="Jane Doe",
+            email="updated@example.com",
+            phone="0987654321",
+            address="456 New St",
+            city="New City",
+            state="New State",
+            pincode="654321",
+            business_type="Service",
+            years_in_business="10",
+            description="Updated description",
+            categories=["Category2"],
+            service_areas=["Area2"],
+            delivery_radius="20",
+        )
