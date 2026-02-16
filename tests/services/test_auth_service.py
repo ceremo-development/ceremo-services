@@ -11,9 +11,21 @@ def mock_repository():
 
 
 @pytest.fixture
-def auth_service(mock_repository):
+def mock_blacklist_repo():
+    return Mock()
+
+
+@pytest.fixture
+def mock_profile_repo():
+    return Mock()
+
+
+@pytest.fixture
+def auth_service(mock_repository, mock_blacklist_repo, mock_profile_repo):
     return AuthService(
         repository=mock_repository,
+        blacklist_repo=mock_blacklist_repo,
+        profile_repo=mock_profile_repo,
         jwt_secret="test-secret-key-at-least-32-chars-long-for-security",
         jwt_expiration=24,
         refresh_expiration=720,
@@ -34,9 +46,12 @@ def mock_partner():
     return partner
 
 
-def test_sign_up_success(auth_service, mock_repository, mock_partner):
+def test_sign_up_success(
+    auth_service, mock_repository, mock_profile_repo, mock_partner
+):
     mock_repository.find_by_email.return_value = None
     mock_repository.create.return_value = mock_partner
+    mock_profile_repo.create.return_value = Mock()
 
     response = auth_service.sign_up(
         email="test@example.com",
@@ -52,6 +67,7 @@ def test_sign_up_success(auth_service, mock_repository, mock_partner):
     assert response.data.user.email == "test@example.com"
     assert response.data.token is not None
     assert response.data.refreshToken is not None
+    mock_profile_repo.create.assert_called_once()
 
 
 def test_sign_up_terms_not_agreed(auth_service):
@@ -151,3 +167,44 @@ def test_sign_in_remember_me(auth_service, mock_repository, mock_partner, mocker
     )
 
     assert mock_generate.call_args_list[0][0][2] == 24 * 24
+
+
+def test_sign_out_success(auth_service, mock_blacklist_repo, mocker):
+    token = "valid.jwt.token"
+    mock_decode = mocker.patch(
+        "app.services.auth_service.decode_token",
+        return_value={"partner_id": "test-id", "exp": 1234567890},
+    )
+    mock_blacklist_repo.blacklist.return_value = Mock()
+
+    response = auth_service.sign_out(token)
+
+    assert response.success is True
+    assert response.message == "Sign out successful"
+    mock_decode.assert_called_once_with(token, auth_service.jwt_secret)
+    mock_blacklist_repo.blacklist.assert_called_once()
+
+
+def test_sign_out_expired_token(auth_service, mocker):
+    import jwt as pyjwt
+
+    token = "expired.jwt.token"
+    mocker.patch(
+        "app.services.auth_service.decode_token",
+        side_effect=pyjwt.ExpiredSignatureError,
+    )
+
+    with pytest.raises(UnauthorizedError, match="Token has expired"):
+        auth_service.sign_out(token)
+
+
+def test_sign_out_invalid_token(auth_service, mocker):
+    import jwt as pyjwt
+
+    token = "invalid.jwt.token"
+    mocker.patch(
+        "app.services.auth_service.decode_token", side_effect=pyjwt.InvalidTokenError
+    )
+
+    with pytest.raises(UnauthorizedError, match="Invalid token"):
+        auth_service.sign_out(token)

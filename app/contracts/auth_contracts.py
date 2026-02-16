@@ -47,3 +47,10 @@ class AuthResponse(BaseModel):
     success: bool = True
     data: AuthData
     message: str
+
+
+class SignOutResponse(BaseModel):
+    """Sign out response schema."""
+
+    success: bool = True
+    message: str

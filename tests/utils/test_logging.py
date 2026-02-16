@@ -44,6 +44,13 @@ def test_setup_logger():
     assert len(logger.handlers) > 0
 
 
+def test_setup_logger_existing_handlers():
+    logger = setup_logger("test_logger_existing")
+    initial_count = len(logger.handlers)
+    logger2 = setup_logger("test_logger_existing")
+    assert len(logger2.handlers) == initial_count
+
+
 def test_setup_request_logging():
     app = Flask(__name__)
     setup_request_logging(app)
